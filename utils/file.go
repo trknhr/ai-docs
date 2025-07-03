@@ -118,6 +118,18 @@ func CopyDir(src, dst string) error {
 	})
 }
 
+func CopyPath(src, dst string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if info.IsDir() {
+		return CopyDir(src, dst)
+	}
+	return copyFile(src, dst)
+}
+
 func copyFile(src, dst string) error {
 	source, err := os.Open(src)
 	if err != nil {
@@ -138,4 +150,44 @@ func copyFile(src, dst string) error {
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+// CleanAllExceptAIPaths removes all files/folders in current dir except .git and allowed AI paths.
+func CleanAllExceptAIPaths(allowedPaths []string) error {
+	keep := make(map[string]struct{})
+
+	// Canonicalize allowed paths
+	for _, p := range allowedPaths {
+		abs, err := filepath.Abs(p)
+		if err != nil {
+			return fmt.Errorf("failed to resolve path %s: %w", p, err)
+		}
+		keep[abs] = struct{}{}
+	}
+
+	// Always preserve .git
+	gitAbs, _ := filepath.Abs(".git")
+	keep[gitAbs] = struct{}{}
+
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		return fmt.Errorf("failed to read current directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+		abs, _ := filepath.Abs(name)
+
+		if _, shouldKeep := keep[abs]; shouldKeep {
+			continue
+		}
+
+		if err := os.RemoveAll(name); err != nil {
+			fmt.Fprintf(os.Stderr, "[warn] failed to remove %s: %v\n", name, err)
+		} else {
+			fmt.Printf("[info] removed: %s\n", name)
+		}
+	}
+
+	return nil
 }

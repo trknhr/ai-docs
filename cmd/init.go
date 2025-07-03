@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 	"github.com/trknhr/ai-docs/config"
@@ -63,8 +63,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("doc branch '%s' already exists (use --force to override)", docBranch)
 	}
 
-	if utils.PathExists(cfg.DocWorktreeDir) && !force {
-		return fmt.Errorf("worktree directory '%s' already exists (use --force to override)", cfg.DocWorktreeDir)
+	if utils.PathExists(cfg.DocWorktreeDir) {
+		if force {
+			cmd := exec.Command("git", "worktree", "remove", "--force", cfg.DocWorktreeDir)
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("failed to remove worktree %s: %w", cfg.DocWorktreeDir, err)
+			}
+		} else {
+			return fmt.Errorf("worktree directory '%s' already exists (use --force to override)", cfg.DocWorktreeDir)
+		}
 	}
 
 	currentBranch, err := utils.GetCurrentBranch()
@@ -85,19 +92,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// 🔐 Stash uncommitted changes before switching
-	if err := utils.RunGit("", "stash", "-u"); err != nil {
-		return fmt.Errorf("failed to stash before orphan switch: %w", err)
-	}
-	defer func() {
-		_ = utils.RunGit("", "stash", "pop")
-	}()
-
-	if err := utils.RunGit("", "switch", "--orphan", docBranch); err != nil {
+	if err := utils.RunGit("", "checkout", "--orphan", docBranch); err != nil {
 		return fmt.Errorf("failed to create orphan branch: %w", err)
+	}
+	if err := utils.RunGit("", "reset"); err != nil {
+		return fmt.Errorf("failed to rest orphan branch: %w", err)
 	}
 
 	// ✅ Validate that HEAD is now on the orphan branch
+	printStep(4, 10, "Validating branch switch")
 	currentBranchNow, err := utils.GetCurrentBranch()
 	if err != nil {
 		return fmt.Errorf("failed to confirm current branch after switch: %w", err)
@@ -106,55 +109,19 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if currentBranchNow != docBranch {
 		return fmt.Errorf("not on expected orphan branch '%s' (got '%s')", docBranch, currentBranchNow)
 	}
-
-	files, _ := filepath.Glob("*")
-	for _, file := range files {
-		if file != ".git" {
-			if err := os.RemoveAll(file); err != nil {
-				printWarning("Failed to remove %s: %v", file, err)
-			}
-		}
-	}
-
-	files, _ = filepath.Glob(".*")
-	for _, file := range files {
-		if file != "." && file != ".." && file != ".git" {
-			os.RemoveAll(file)
-		}
-	}
-
-	printStep(4, 10, "Copying AI directories")
-	for agent, path := range cfg.AIAgentMemoryContextPath {
-		printInfo("Processing %s: %s", agent, path)
-
-		srcPath := filepath.Join("..", path)
-		if utils.PathExists(srcPath) {
-			if err := os.MkdirAll(path, 0755); err != nil {
-				printWarning("Failed to create directory %s: %v", path, err)
-				continue
-			}
-
-			if err := utils.CopyDir(srcPath, path); err != nil {
-				printWarning("Failed to copy %s: %v", path, err)
-			} else {
-				printInfo("Copied %s", path)
-			}
-		} else {
-			if err := os.MkdirAll(path, 0755); err != nil {
-				printWarning("Failed to create directory %s: %v", path, err)
-			}
-		}
-	}
-
-	if cfg.DocDir != "" {
-		if err := os.MkdirAll(cfg.DocDir, 0755); err != nil {
-			printWarning("Failed to create doc directory %s: %v", cfg.DocDir, err)
-		}
-	}
+	printSuccess("Successfully switched to orphan branch: %s", docBranch)
 
 	printStep(5, 10, "Creating initial commit")
-	if err := utils.RunGit("", "add", "-A"); err != nil {
-		return fmt.Errorf("failed to stage files: %w", err)
+	for _, path := range cfg.AIAgentMemoryContextPath {
+		if utils.PathExists(path) {
+			if err := utils.RunGit("", "add", path); err != nil {
+				printWarning("Failed to stage %s: %v", path, err)
+			} else {
+				printInfo("Staged: %s", path)
+			}
+		} else {
+			printInfo("Skipped (not found): %s", path)
+		}
 	}
 
 	if err := utils.RunGit("", "commit", "-m", "Initial AI docs commit", "--allow-empty"); err != nil {
@@ -168,7 +135,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	printStep(6, 10, "Returning to main branch")
-	if err := utils.RunGit("", "switch", cfg.MainBranchName); err != nil {
+	if err := utils.RunGit("", "switch", "-f", cfg.MainBranchName); err != nil {
 		if err := utils.RunGit("", "switch", currentBranch); err != nil {
 			return fmt.Errorf("failed to return to branch: %w", err)
 		}
@@ -176,14 +143,14 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	printStep(7, 10, "Updating .gitignore")
 	gitignorePath := ".gitignore"
-	modified := false
+	// modified := false
 
 	for _, pattern := range cfg.IgnorePatterns {
 		if !utils.FileContains(gitignorePath, pattern) {
 			if err := utils.AppendToFile(gitignorePath, []string{pattern}); err != nil {
 				printWarning("Failed to add pattern to .gitignore: %v", err)
 			} else {
-				modified = true
+				// modified = true
 				printInfo("Added to .gitignore: %s", pattern)
 			}
 		}
@@ -193,24 +160,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err := utils.AppendToFile(gitignorePath, []string{cfg.DocWorktreeDir}); err != nil {
 			printWarning("Failed to add worktree dir to .gitignore: %v", err)
 		} else {
-			modified = true
+			// modified = true
 			printInfo("Added to .gitignore: %s", cfg.DocWorktreeDir)
 		}
 	}
-
-	// if modified {
-	// 	if err := utils.RunGit("", "add", ".gitignore"); err != nil {
-	// 		printWarning("Failed to stage .gitignore: %v", err)
-	// 	} else {
-	// 		if err := utils.RunGit("", "commit", "-m", "Update .gitignore for AI docs"); err != nil {
-	// 			printWarning("Failed to commit .gitignore: %v", err)
-	// 		} else {
-	// 			if err := utils.PushWithRetry("", cfg.MainBranchName, 3); err != nil {
-	// 				printWarning("Failed to push .gitignore changes: %v", err)
-	// 			}
-	// 		}
-	// 	}
-	// }
 
 	printStep(8, 10, "Adding worktree")
 	if utils.PathExists(cfg.DocWorktreeDir) && force {
@@ -226,20 +179,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	printSuccess("Added worktree at %s", cfg.DocWorktreeDir)
 
 	printStep(9, 10, "Creating symlinks")
-	for agent, path := range cfg.AIAgentMemoryContextPath {
-		from := path
-		to, err := filepath.Abs(filepath.Join(cfg.DocWorktreeDir, path))
-		if err != nil {
-			printWarning("Failed to get absolute path for %s: %v", path, err)
-			continue
-		}
-
-		if err := utils.EnsureSymlink(from, to); err != nil {
-			printWarning("Failed to create symlink for %s: %v", agent, err)
-		} else {
-			printSuccess("Created symlink: %s → %s", from, to)
-		}
-	}
+	printInfo("Symlinks creation would go here")
 
 	printStep(10, 10, "Initialization complete")
 	printSuccess("AI docs initialized successfully!")
@@ -255,51 +195,19 @@ func createScaffoldingConfig(path string) error {
 mainBranchName: "main"
 
 docBranchNameTemplate: "@doc/{userName}"  # {userName} ↔ runtime replace
-docWorktreeDir: ".mem"
+docWorktreeDir: ".ai-docs"
 
 aIAgentMemoryContextPath:
   Cline: "memory-bank"
   Claude: "CLAUDE.md"
-  Gemini: "GEMEMINI.md"
+  Gemini: "GEMINI.md"
   Cursor: ".cursor/rules"
 
 ignorePatterns:
   - "./memory-bank/"
   - "CLAUDE.md"
-  - "GEMEMINI.md"
+  - "GEMINI.md"
   - "./.cursor/rules/"
 `
 	return os.WriteFile(path, []byte(content), 0644)
 }
-
-// package utils
-
-// import (
-// 	"fmt"
-// 	"os"
-// )
-
-// // EnsureSymlinkIfExists replaces existing file/dir/symlink at `from` with a symlink to `to`.
-// // Does nothing if `from` does not exist.
-// func EnsureSymlinkIfExists(from, to string) error {
-// 	_, err := os.Lstat(from)
-// 	if os.IsNotExist(err) {
-// 		// Path does not exist → do nothing
-// 		return nil
-// 	}
-// 	if err != nil {
-// 		return fmt.Errorf("failed to stat %s: %w", from, err)
-// 	}
-
-// 	// Remove existing file/directory/symlink
-// 	if err := os.RemoveAll(from); err != nil {
-// 		return fmt.Errorf("failed to remove existing path at %s: %w", from, err)
-// 	}
-
-// 	// Create symlink
-// 	if err := os.Symlink(to, from); err != nil {
-// 		return fmt.Errorf("failed to create symlink from %s to %s: %w", from, to, err)
-// 	}
-
-// 	return nil
-// }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	docBranch := cfg.GetDocBranchName()
-	
+
 	if !utils.PathExists(cfg.DocWorktreeDir) {
 		return fmt.Errorf("worktree directory '%s' does not exist - run 'ai-docs init' first", cfg.DocWorktreeDir)
 	}
@@ -46,9 +47,23 @@ func runSync(cmd *cobra.Command, args []string) error {
 	}
 
 	printInfo("Syncing worktree: %s", cfg.DocWorktreeDir)
-	
+
 	if err := utils.RunGit(cfg.DocWorktreeDir, "pull", "--quiet"); err != nil {
 		printWarning("Pull failed (may be normal for new branches): %v", err)
+	}
+
+	for _, path := range cfg.AIAgentMemoryContextPath {
+		src := filepath.Join(".", path)
+		dst := filepath.Join(cfg.DocWorktreeDir, path)
+
+		if !utils.PathExists(src) {
+			printWarning("Source path does not exist: %s (skipping)", src)
+			continue
+		}
+
+		if err := utils.CopyPath(src, dst); err != nil {
+			printWarning("Failed to copy %s → %s: %v", src, dst, err)
+		}
 	}
 
 	if err := utils.RunGit(cfg.DocWorktreeDir, "add", "-A"); err != nil {
@@ -62,7 +77,7 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 	timestamp := time.Now().Format("2006-01-02_15:04:05")
 	commitMsg := fmt.Sprintf("sync ai docs %s", timestamp)
-	
+
 	if err := utils.RunGit(cfg.DocWorktreeDir, "commit", "-m", commitMsg); err != nil {
 		return fmt.Errorf("failed to commit: %w", err)
 	}
