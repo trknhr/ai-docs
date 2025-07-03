@@ -1,0 +1,19 @@
+userName: "defaultAsGitUsername"   # fallback when git config user.name is empty
+mainBranchName: "main"
+
+docBranchNameTemplate: "@doc/{userName}"  # {userName} ↔ runtime replace
+docWorktreeDir: ".mem"
+
+aIAgentMemoryContextPath:
+  Cline: "memory-bank"
+  Claude: ".ai-memory"
+  Gemini: ".gemini/context"
+  Cursor: ".cursor/rules"
+
+ignorePatterns:
+  - "/memory-bank/"
+  - "/.ai-memory/"
+  - "/.gemini/context/"
+  - "/.cursor/rules/"
+
+docDir: "docs/ai"           # optional – where to add extra docs
