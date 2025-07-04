@@ -14,22 +14,19 @@ A Go-based CLI tool that provides a one-command workflow to isolate AI-generated
 
 ## Installation
 
-## Install
+### Using install script
 
 ```bash
-brew tap trknhr/homebrew-tap
-brew install ai-docs
+curl -sSL https://raw.githubusercontent.com/trknhr/ai-docs/main/install.sh | sh
 ```
 
-```bash
-curl -sSL https://github.com/trknhr/ai-docs/main/install.sh | sh
-```
+### Using Go
 
 ```bash
 go install github.com/trknhr/ai-docs@latest
 ```
 
-Or build from source:
+### Build from source
 
 ```bash
 git clone https://github.com/trknhr/ai-docs
@@ -46,14 +43,14 @@ ai-docs init [--config path/to/config.yml] [--force] [--dry-run] [-v]
 ```
 
 This command:
-1. Reads configuration
-2. Creates an orphan branch (e.g., `@doc/username`)
-3. Copies AI memory directories to the branch
+1. Reads configuration (defaults to `.ai-docs.config.yml`)
+2. Creates an orphan branch (e.g., `@ai-docs/username`)
+3. Copies AI memory files to the branch
 4. Creates initial commit and pushes
 5. Returns to main branch
 6. Updates .gitignore
-7. Adds a worktree at `.mem`
-8. Creates symlinks from project root to worktree
+7. Adds a worktree at `.ai-docs`
+8. Creates symlinks from project root to worktree (planned)
 
 ### Push changes
 
@@ -81,28 +78,26 @@ Removes the worktree and branch after confirmation.
 
 ## Configuration
 
-Create `ai-docs.config.yml` in your project root:
+Create `.ai-docs.config.yml` in your project root:
 
 ```yaml
-userName: "defaultAsGitUsername"   # fallback when git config user.name is empty
+userName: ""   # fallback when git config user.name is empty
 mainBranchName: "main"
 
-docBranchNameTemplate: "@doc/{userName}"  # {userName} is replaced at runtime
-docWorktreeDir: ".mem"
+docBranchNameTemplate: "@ai-docs/{userName}"  # {userName} is replaced at runtime
+docWorktreeDir: ".ai-docs"
 
 aIAgentMemoryContextPath:
   Cline: "memory-bank"
-  Claude: ".ai-memory"
-  Gemini: ".gemini/context"
+  Claude: "CLAUDE.md"
+  Gemini: "GEMINI.md"
   Cursor: ".cursor/rules"
 
 ignorePatterns:
   - "/memory-bank/"
-  - "/.ai-memory/"
-  - "/.gemini/context/"
+  - "CLAUDE.md"
+  - "GEMINI.md"
   - "/.cursor/rules/"
-
-docDir: "docs/ai"           # optional – where to add extra docs
 ```
 
 ## Requirements
