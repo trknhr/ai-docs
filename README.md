@@ -14,6 +14,17 @@ A Go-based CLI tool that provides a one-command workflow to isolate AI-generated
 
 ## Installation
 
+## Install
+
+```bash
+brew tap trknhr/homebrew-tap
+brew install ai-docs
+```
+
+```bash
+curl -sSL https://github.com/trknhr/ai-docs/main/install.sh | sh
+```
+
 ```bash
 go install github.com/trknhr/ai-docs@latest
 ```
