@@ -30,21 +30,30 @@ make sync           # Deprecated: run 'ai-docs sync -v'
 make clean          # Remove build artifacts
 ```
 
+### Release Process
+```bash
+# Create a new version tag and push it
+git tag v1.0.0
+git push origin v1.0.0
+# GitHub Actions will automatically create a release with binaries
+```
+
 ## Architecture Overview
 
 This is a Go CLI tool that manages AI-generated memory files by isolating them on a dedicated Git branch with worktree support. It solves the problem of AI assistants' context files cluttering the main repository.
 
 ### Core Workflow
 
-1. **Orphan Branch Strategy**: Creates a separate branch (`@ai-doc/username`) with no shared history from main, keeping AI files completely isolated
+1. **Orphan Branch Strategy**: Creates a separate branch (`@ai-docs/username`) with no shared history from main, keeping AI files completely isolated
 2. **Git Worktree**: Uses Git's worktree feature to maintain AI files in `.ai-docs` directory while keeping main branch clean
 3. **Pull/Push Workflow**: Separate commands for pulling remote changes and pushing local updates, providing flexible synchronization
 
 ### Key Components
 
-- **cmd/**: Cobra-based CLI commands (init, sync, clean)
+- **cmd/**: Cobra-based CLI commands (init, pull, push, sync, clean)
   - Each command follows a step-by-step process with colored output
   - All commands support `--dry-run` for testing and `-v` for verbose output
+  - `sync` is deprecated in favor of separate `pull` and `push` commands
   
 - **config/**: Configuration system supporting YAML/JSON/TOML
   - Auto-detects username from git config or whoami
@@ -61,13 +70,17 @@ This is a Go CLI tool that manages AI-generated memory files by isolating them o
 2. **Branch Validation**: Always validates current branch state before and after operations
 3. **Force Flags**: Both init and clean support `--force` for overriding existing states
 4. **Config Scaffolding**: Creates example config on first run, then exits for user review
+5. **Force Add**: Uses `git add -f` to stage AI files even if they're in .gitignore
+6. **Default Config**: Config file defaults to `.ai-docs.config.yml` (with leading dot)
 
 ### Common Pitfalls
 
 - The tool modifies `.gitignore` on the main branch - these changes need to be committed separately
-- Symlink creation (step 9 in init) is not fully implemented yet
+- Symlink creation is not fully implemented yet
 - No test files exist despite Makefile test targets
 - Worktree directory must not exist before init (unless using --force)
+- Config file name changed from `ai-docs.config.yml` to `.ai-docs.config.yml`
+- Branch naming changed from `@doc/{userName}` to `@ai-docs/{userName}`
 
 ### Development Notes
 
@@ -77,3 +90,5 @@ When modifying this codebase:
 - The orphan branch workflow is critical - never merge it with main
 - Config file changes require re-running init to take effect
 - Print functions (printStep, printInfo, etc.) in cmd/root.go handle colored output
+- CI/CD is configured with GitHub Actions for automatic testing and releases
+- GoReleaser handles multi-platform builds when tags are pushed
