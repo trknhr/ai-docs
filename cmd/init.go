@@ -201,10 +201,10 @@ aIAgentMemoryContextPath:
   Cursor: ".cursor/rules"
 
 ignorePatterns:
-  - "memory-bank/"
+  - "memory-bank"
   - "CLAUDE.md"
   - "GEMINI.md"
-  - ".cursor/rules/"
+  - ".cursor"
 `
 	return os.WriteFile(path, []byte(content), 0644)
 }

@@ -11,7 +11,7 @@ aIAgentMemoryContextPath:
   Cursor: ".cursor/rules"
 
 ignorePatterns:
-  - "/memory-bank/"
-  - "/.ai-memory/"
-  - "/.gemini/context/"
-  - "/.cursor/rules/"
+  - "memory-bank/"
+  - "CLAUDE.md"
+  - "GEMENI.md"
+  - ".cursor"

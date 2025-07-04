@@ -24,7 +24,7 @@ type Config struct {
 
 func LoadConfig(configPath string) (*Config, error) {
 	if configPath == "" {
-		configPath = "ai-docs.config.yml"
+		configPath = ".ai-docs.config.yml"
 	}
 
 	data, err := os.ReadFile(configPath)

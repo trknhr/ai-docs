@@ -30,7 +30,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "config file path (default: ai-docs.config.yml)")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", "", "config file path (default: .ai-docs.config.yml)")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "show what would be done without making changes")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 }
