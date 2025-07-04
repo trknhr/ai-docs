@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +17,11 @@ func FileContains(path, line string) bool {
 	if err != nil {
 		return false
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file: %v", err)
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -33,7 +38,11 @@ func AppendToFile(path string, lines []string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("failed to close file: %v", err)
+		}
+	}()
 
 	for _, line := range lines {
 		if _, err := file.WriteString(line + "\n"); err != nil {
@@ -46,7 +55,9 @@ func AppendToFile(path string, lines []string) error {
 
 func EnsureSymlink(from, to string) error {
 	if _, err := os.Lstat(from); err == nil {
-		os.Remove(from)
+		if err := os.Remove(from); err != nil {
+			return fmt.Errorf("fail to remove %s", from)
+		}
 	}
 
 	if runtime.GOOS == "windows" {
@@ -135,13 +146,21 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() {
+		if err := source.Close(); err != nil {
+			log.Printf("failed to close file: %v", err)
+		}
+	}()
 
 	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destination.Close()
+	defer func() {
+		if err := destination.Close(); err != nil {
+			log.Printf("failed to close file: %v", err)
+		}
+	}()
 
 	_, err = io.Copy(destination, source)
 	return err

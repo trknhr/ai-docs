@@ -45,10 +45,6 @@ func printSuccess(format string, args ...interface{}) {
 	color.Green("✓ "+format, args...)
 }
 
-func printError(format string, args ...interface{}) {
-	color.Red("✗ "+format, args...)
-}
-
 func printWarning(format string, args ...interface{}) {
 	color.Yellow("⚠ "+format, args...)
 }

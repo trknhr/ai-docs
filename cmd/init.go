@@ -166,7 +166,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 	if utils.PathExists(cfg.DocWorktreeDir) && force {
 		printInfo("Removing existing worktree")
 		if err := utils.RunGit("", "worktree", "remove", "-f", cfg.DocWorktreeDir); err != nil {
-			os.RemoveAll(cfg.DocWorktreeDir)
+			if err := os.RemoveAll(cfg.DocWorktreeDir); err != nil {
+				return fmt.Errorf("failed to remove worktree %v", err)
+			}
 		}
 	}
 
