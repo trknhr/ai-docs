@@ -1,0 +1,17 @@
+userName: ""   # fallback when git config user.name is empty
+mainBranchName: "main"
+
+docBranchNameTemplate: "@ai-docs/{userName}"  
+docWorktreeDir: ".ai-docs"
+
+aIAgentMemoryContextPath:
+  Cline: "memory-bank"
+  Claude: "CLAUDE.md"
+  Gemini: "GEMINI.md"
+  Cursor: ".cursor/rules"
+
+ignorePatterns:
+  - "/memory-bank/"
+  - "/.ai-memory/"
+  - "/.gemini/context/"
+  - "/.cursor/rules/"

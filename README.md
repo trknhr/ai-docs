@@ -8,7 +8,7 @@ A Go-based CLI tool that provides a one-command workflow to isolate AI-generated
 - Sets up a Git worktree for isolated file management  
 - Creates symlinks from project root to worktree
 - Automatically updates .gitignore
-- Easy sync command to commit and push changes
+- Separate pull/push commands for flexible workflow
 - Support for multiple AI agents (Cline, Claude, Gemini, Cursor)
 - Configuration via YAML, JSON, or TOML
 
@@ -44,13 +44,21 @@ This command:
 7. Adds a worktree at `.mem`
 8. Creates symlinks from project root to worktree
 
-### Sync changes
+### Push changes
 
 ```bash
-ai-docs sync [--config path/to/config.yml] [--dry-run] [-v]
+ai-docs push [--config path/to/config.yml] [--dry-run] [-v]
 ```
 
-Commits and pushes any changes in the AI docs worktree.
+Copies local AI docs to the worktree, commits and pushes changes to remote.
+
+### Pull changes
+
+```bash
+ai-docs pull [--config path/to/config.yml] [--overwrite] [--dry-run] [-v]
+```
+
+Pulls latest changes from remote AI docs branch and copies them to your local project. Use `--overwrite` to replace existing local files.
 
 ### Clean up
 
@@ -89,7 +97,7 @@ docDir: "docs/ai"           # optional – where to add extra docs
 ## Requirements
 
 - Git 2.7.0+ (for worktree support)
-- Go 1.22+ (for building from source)
+- Go 1.24+ (for building from source)
 
 ## License
 

@@ -92,10 +92,20 @@ deps-update:
 init: build
 	./$(BINARY_NAME) init -v
 
-# Run sync command for testing
+# Run sync command for testing (deprecated - use push/pull)
 .PHONY: sync
 sync: build
 	./$(BINARY_NAME) sync -v
+
+# Run pull command for testing
+.PHONY: pull
+pull: build
+	./$(BINARY_NAME) pull -v
+
+# Run push command for testing
+.PHONY: push
+push: build
+	./$(BINARY_NAME) push -v
 
 # Display help
 .PHONY: help
@@ -112,7 +122,9 @@ help:
 	@echo "  deps          - Download dependencies"
 	@echo "  deps-update   - Update dependencies"
 	@echo "  init          - Run 'ai-docs init' command"
-	@echo "  sync          - Run 'ai-docs sync' command"
+	@echo "  sync          - Run 'ai-docs sync' command (deprecated)"
+	@echo "  pull          - Run 'ai-docs pull' command"
+	@echo "  push          - Run 'ai-docs push' command"
 	@echo "  help          - Display this help message"
 	@echo ""
 	@echo "Examples:"

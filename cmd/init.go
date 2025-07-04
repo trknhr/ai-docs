@@ -27,11 +27,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("not a git repository")
 	}
 
-	printStep(1, 10, "Reading configuration")
+	printStep(1, 9, "Reading configuration")
 
 	// Check if config file exists, create scaffolding if not
 	if configPath == "" {
-		configPath = "ai-docs.config.yml"
+		configPath = ".ai-docs.config.yml"
 	}
 
 	if !utils.PathExists(configPath) {
@@ -54,7 +54,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	printInfo("Doc branch: %s", docBranch)
 	printInfo("Worktree dir: %s", cfg.DocWorktreeDir)
 
-	printStep(2, 10, "Performing checks")
+	printStep(2, 9, "Performing checks")
 	if !utils.BranchExists(cfg.MainBranchName) {
 		return fmt.Errorf("main branch '%s' does not exist", cfg.MainBranchName)
 	}
@@ -84,7 +84,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	printStep(3, 10, fmt.Sprintf("Creating docs branch: %s", docBranch))
+	printStep(3, 9, fmt.Sprintf("Creating docs branch: %s", docBranch))
 	if utils.BranchExists(docBranch) && force {
 		printInfo("Deleting existing branch: %s", docBranch)
 		if err := utils.RunGit("", "branch", "-D", docBranch); err != nil {
@@ -100,7 +100,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// ✅ Validate that HEAD is now on the orphan branch
-	printStep(4, 10, "Validating branch switch")
+	printStep(4, 9, "Validating branch switch")
 	currentBranchNow, err := utils.GetCurrentBranch()
 	if err != nil {
 		return fmt.Errorf("failed to confirm current branch after switch: %w", err)
@@ -111,10 +111,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	printSuccess("Successfully switched to orphan branch: %s", docBranch)
 
-	printStep(5, 10, "Creating initial commit")
+	printStep(5, 9, "Creating initial commit")
 	for _, path := range cfg.AIAgentMemoryContextPath {
 		if utils.PathExists(path) {
-			if err := utils.RunGit("", "add", path); err != nil {
+			if err := utils.RunGit("", "add", "-f", path); err != nil {
 				printWarning("Failed to stage %s: %v", path, err)
 			} else {
 				printInfo("Staged: %s", path)
@@ -134,23 +134,21 @@ func runInit(cmd *cobra.Command, args []string) error {
 		printSuccess("Pushed branch to origin")
 	}
 
-	printStep(6, 10, "Returning to main branch")
+	printStep(6, 9, "Returning to main branch")
 	if err := utils.RunGit("", "switch", "-f", cfg.MainBranchName); err != nil {
 		if err := utils.RunGit("", "switch", currentBranch); err != nil {
 			return fmt.Errorf("failed to return to branch: %w", err)
 		}
 	}
 
-	printStep(7, 10, "Updating .gitignore")
+	printStep(7, 9, "Updating .gitignore")
 	gitignorePath := ".gitignore"
-	// modified := false
 
 	for _, pattern := range cfg.IgnorePatterns {
 		if !utils.FileContains(gitignorePath, pattern) {
 			if err := utils.AppendToFile(gitignorePath, []string{pattern}); err != nil {
 				printWarning("Failed to add pattern to .gitignore: %v", err)
 			} else {
-				// modified = true
 				printInfo("Added to .gitignore: %s", pattern)
 			}
 		}
@@ -160,12 +158,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err := utils.AppendToFile(gitignorePath, []string{cfg.DocWorktreeDir}); err != nil {
 			printWarning("Failed to add worktree dir to .gitignore: %v", err)
 		} else {
-			// modified = true
 			printInfo("Added to .gitignore: %s", cfg.DocWorktreeDir)
 		}
 	}
 
-	printStep(8, 10, "Adding worktree")
+	printStep(8, 9, "Adding worktree")
 	if utils.PathExists(cfg.DocWorktreeDir) && force {
 		printInfo("Removing existing worktree")
 		if err := utils.RunGit("", "worktree", "remove", "-f", cfg.DocWorktreeDir); err != nil {
@@ -178,23 +175,21 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	printSuccess("Added worktree at %s", cfg.DocWorktreeDir)
 
-	printStep(9, 10, "Creating symlinks")
-	printInfo("Symlinks creation would go here")
-
-	printStep(10, 10, "Initialization complete")
+	printStep(9, 9, "Initialization complete")
 	printSuccess("AI docs initialized successfully!")
 	fmt.Println("\nNext steps:")
 	fmt.Println("  - Edit AI memory files in the symlinked directories")
-	fmt.Println("  - Run 'ai-docs sync' to commit and push changes")
+	fmt.Println("  - Run 'ai-docs push' to commit and push changes")
+	fmt.Println("  - Run 'ai-docs pull' to get latest changes from remote")
 
 	return nil
 }
 
 func createScaffoldingConfig(path string) error {
-	content := `userName: ""   # fallback when git config user.name is empty
+	content := `userName: ""   # fallback git config user.name or whoami when userName is embpty 
 mainBranchName: "main"
 
-docBranchNameTemplate: "@doc/{userName}"  # {userName} ↔ runtime replace
+docBranchNameTemplate: "@ai-docs/{userName}"  # {userName} ↔ runtime replace
 docWorktreeDir: ".ai-docs"
 
 aIAgentMemoryContextPath:
@@ -204,10 +199,10 @@ aIAgentMemoryContextPath:
   Cursor: ".cursor/rules"
 
 ignorePatterns:
-  - "./memory-bank/"
+  - "memory-bank/"
   - "CLAUDE.md"
   - "GEMINI.md"
-  - "./.cursor/rules/"
+  - ".cursor/rules/"
 `
 	return os.WriteFile(path, []byte(content), 0644)
 }

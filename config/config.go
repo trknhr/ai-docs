@@ -67,7 +67,7 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	if cfg.UserName == "" || cfg.UserName == "defaultAsGitUsername" {
+	if cfg.UserName == "" {
 		cfg.UserName = getGitUserName()
 	}
 
@@ -77,10 +77,16 @@ func LoadConfig(configPath string) (*Config, error) {
 func getGitUserName() string {
 	cmd := exec.Command("git", "config", "user.name")
 	output, err := cmd.Output()
-	if err != nil {
+	if err == nil && strings.TrimSpace(string(output)) != "" {
+		return strings.TrimSpace(string(output))
+	}
+
+	whoamiCmd := exec.Command("whoami")
+	whoamiOutput, err := whoamiCmd.Output()
+	if err != nil || strings.TrimSpace(string(whoamiOutput)) == "" {
 		return "user"
 	}
-	return strings.TrimSpace(string(output))
+	return strings.TrimSpace(string(whoamiOutput))
 }
 
 func (c *Config) GetDocBranchName() string {

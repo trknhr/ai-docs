@@ -37,13 +37,13 @@ func runClean(cmd *cobra.Command, args []string) error {
 	if !force {
 		fmt.Printf("This will remove the worktree at '%s' and the branch '%s'.\n", cfg.DocWorktreeDir, docBranch)
 		fmt.Print("Are you sure? (y/N): ")
-		
+
 		reader := bufio.NewReader(os.Stdin)
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			return fmt.Errorf("failed to read response: %w", err)
 		}
-		
+
 		response = strings.ToLower(strings.TrimSpace(response))
 		if response != "y" && response != "yes" {
 			fmt.Println("Clean cancelled")

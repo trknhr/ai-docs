@@ -1,0 +1,123 @@
+# GoReleaser configuration
+# Documentation at https://goreleaser.com
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: ai-docs
+    main: ./main.go
+    binary: ai-docs
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - id: default
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE*
+      - install.sh
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - 'typo'
+      - 'Merge pull request'
+      - 'Merge branch'
+  groups:
+    - title: 'Features'
+      regexp: '^feat'
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: '^fix'
+      order: 1
+    - title: 'Performance'
+      regexp: '^perf'
+      order: 2
+    - title: 'Refactoring'
+      regexp: '^refactor'
+      order: 3
+    - title: 'Others'
+      order: 999
+
+release:
+  github:
+    owner: trknhr
+    name: ai-docs
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+  header: |
+    ## AI Docs CLI v{{.Version}}
+    
+    A Go-based CLI tool that provides a one-command workflow to isolate AI-generated "memory" files onto a dedicated Git branch.
+
+  footer: |
+    ## Installation
+    
+    ### Using the install script:
+    ```bash
+    curl -sSL https://github.com/trknhr/ai-docs/releases/download/v{{.Version}}/install.sh | bash
+    ```
+    
+    ### Manual installation:
+    Download the appropriate binary for your platform from the assets below.
+    
+    ### Using Go:
+    ```bash
+    go install github.com/trknhr/ai-docs@v{{.Version}}
+    ```
+
+brews:
+  - name: ai-docs
+    homepage: "https://github.com/trknhr/ai-docs"
+    description: "AI-generated memory files manager for Git"
+    repository:
+      owner: trknhr
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    test: |
+      system "#{bin}/ai-docs", "--version"
+    install: |
+      bin.install "ai-docs"
