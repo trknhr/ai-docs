@@ -7,10 +7,10 @@ BINARY_NAME="ai-docs"
 INSTALL_DIR="/usr/local/bin"
 
 # Detect OS and ARCH
-OS="$(uname | tr '[:upper:]' '[:lower:]')"
+OS="$(uname)"
 ARCH="$(uname -m)"
 case "$ARCH" in
-  x86_64) ARCH="amd64" ;;
+  x86_64) ARCH="x86_64" ;;
   arm64|aarch64) ARCH="arm64" ;;
   *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
@@ -20,7 +20,7 @@ TAG=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_
 TAG_NO_V=$(echo "$TAG" | sed 's/^v//')
 
 # Build download URL
-FILENAME="${BINARY_NAME}_${TAG_NO_V}_${OS}_${ARCH}.tar.gz"
+FILENAME="${BINARY_NAME}_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${TAG}/${FILENAME}"
 
 # Download and extract
