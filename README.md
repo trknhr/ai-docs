@@ -14,6 +14,13 @@ A Go-based CLI tool that provides a one-command workflow to isolate AI-generated
 
 ## Installation
 
+### Using Homebrew
+
+```bash
+brew tap trknhr/homebrew-tap
+brew install ai-docs
+```
+
 ### Using install script
 
 ```bash
@@ -39,7 +46,7 @@ go build -o ai-docs .
 ### Initialize AI docs
 
 ```bash
-ai-docs init [--config path/to/config.yml] [--force] [--dry-run] [-v]
+ai-docs init [--config path/to/.ai-docs.config.yml] [--force] [--dry-run] [-v]
 ```
 
 This command:
@@ -50,7 +57,8 @@ This command:
 5. Returns to main branch
 6. Updates .gitignore
 7. Adds a worktree at `.ai-docs`
-8. Creates symlinks from project root to worktree (planned)
+
+> **⚠️ Important Notice**: If your AI memory files (like `CLAUDE.md`, `memory-bank/`, etc.) are not yet committed to any branch, they will be moved to the `@ai-docs/username` branch and will no longer exist in your main branch after running `init`. This is intentional to keep your main branch clean. You can use `ai-docs pull` to copy these files back to your main branch if needed.
 
 ### Push changes
 
@@ -107,4 +115,6 @@ ignorePatterns:
 
 ## License
 
-See spec.md for more details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright 2025 Teruo Kunihiro
