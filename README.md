@@ -58,7 +58,9 @@ This command:
 6. Updates .gitignore
 7. Adds a worktree at `.ai-docs`
 
-> **⚠️ Important Notice**: If your AI memory files (like `CLAUDE.md`, `memory-bank/`, etc.) are not yet committed to any branch, they will be moved to the `@ai-docs/username` branch and will no longer exist in your main branch after running `init`. This is intentional to keep your main branch clean. You can use `ai-docs pull` to copy these files back to your main branch if needed.
+> **⚠️ Important Notices**: 
+> - If the config file doesn't exist, `ai-docs init` will create a sample `.ai-docs.config.yml` and exit. You'll need to review/edit the config file and run `ai-docs init` again.
+> - If your AI memory files (like `CLAUDE.md`, `memory-bank/`, etc.) are not yet committed to any branch, they will be moved to the `@ai-docs/username` branch and will no longer exist in your main branch after running `init`. This is intentional to keep your main branch clean. You can use `ai-docs pull` to copy these files back to your main branch if needed.
 
 ### Push changes
 
