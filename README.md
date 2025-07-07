@@ -1,12 +1,11 @@
 # AI Docs CLI
 
-A Go-based CLI tool that provides a one-command workflow to isolate AI-generated "memory" files onto a dedicated Git branch with worktree, automatic symlinks, and easy sync.
+A Go-based CLI tool that provides a one-command workflow to isolate AI-generated "memory" files (GEMINI.md, CLAUDE.md etc) onto a dedicated Git branch with worktree and easy sync.
 
 ## Features
 
-- Creates an orphan branch for AI memory files
+- Creates an orphan branch for AI memory files(GEMINI.md, CLAUDE.md, .cursor/rules/)
 - Sets up a Git worktree for isolated file management  
-- Creates symlinks from project root to worktree
 - Automatically updates .gitignore
 - Separate pull/push commands for flexible workflow
 - Support for multiple AI agents (Cline, Claude, Gemini, Cursor)
@@ -68,7 +67,7 @@ This command:
 ai-docs push [--config path/to/config.yml] [--dry-run] [-v]
 ```
 
-Copies local AI docs to the worktree, commits and pushes changes to remote.
+Copies local AI docs to the worktree, commits and pushes ( to the `@ai-docs/username` branch ) changes to remote.
 
 ### Pull changes
 
@@ -107,7 +106,7 @@ ignorePatterns:
   - "/memory-bank/"
   - "CLAUDE.md"
   - "GEMINI.md"
-  - "/.cursor/rules/"
+  - "/.cursor/rules"
 ```
 
 ## Requirements
